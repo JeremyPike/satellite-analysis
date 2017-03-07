@@ -1,2 +1,3 @@
-This is an test plugin for experimentation with ImageJ commands and ops. It implements a difference of Gaussian operation.
+This plugin is being developed for the analysis of the spatial distriubution of centrosomes and satellite proteins. 
 
+It is under development and is not ready for public use.
