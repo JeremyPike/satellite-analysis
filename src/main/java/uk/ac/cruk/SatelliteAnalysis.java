@@ -1,6 +1,7 @@
 
 package uk.ac.cruk;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -20,12 +21,15 @@ import fiji.plugin.trackmate.detection.DownsampleLogDetectorFactory;
 import fiji.plugin.trackmate.detection.LogDetectorFactory;
 import fiji.plugin.trackmate.features.FeatureFilter;
 import fiji.plugin.trackmate.features.spot.SpotIntensityAnalyzerFactory;
+import fiji.plugin.trackmate.visualization.SpotColorGenerator;
 import fiji.plugin.trackmate.visualization.hyperstack.HyperStackDisplayer;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.measure.Calibration;
+import ij.measure.ResultsTable;
 import ij.plugin.HyperStackConverter;
+import ij.plugin.frame.RoiManager;
 import ij.process.ImageProcessor;
 import loci.formats.ChannelSeparator;
 import loci.formats.meta.MetadataRetrieve;
@@ -98,10 +102,19 @@ public class SatelliteAnalysis<T extends RealType<T>> implements Command {
 	@Parameter(label = "Max intenisty threshold for centrosome spots: ", persist = false, min = "0")
 	private double centSpotMaxIntThresh = 18;
 	
+	@Parameter(label = "Division factor for measurement within DAPI spots ", persist = false, min = "1")
+	private double dapiCentreFrac = 4;
+	
+	@Parameter(label = "Multiplication edge factor for minimum distance from image edge for Dapi spots ", persist = false, min = "0.1")
+	private double 	edgeFac = 2;
+
 	@Override
 	public void run() {
 		// Create legacy service
 		LegacyService legacy = ij.get(LegacyService.class);
+		
+		// Get series name
+		String seriesName = currentData.getName();
 		
 		// Get IJ2 Img object
 		final Img<T> image = (Img<T>) currentData.getImgPlus();
@@ -212,13 +225,35 @@ public class SatelliteAnalysis<T extends RealType<T>> implements Command {
         
 		SpotCollection centSpots = countSpotsTrackmate(centSettings, false);
 
-		int numNuclei = dapiSpots.getNSpots(true);
+		int numUnfilteredNuclei = dapiSpots.getNSpots(true);
 		Iterator<Spot> dapiIterator = dapiSpots.iterator(true);
-		Nucleus[] nuclei = new Nucleus[numNuclei];
-		for (int i = 0; i < numNuclei; i++) {
+		Nucleus[] nucleiUnfiltered = new Nucleus[numUnfilteredNuclei];
+
+		for (int i = 0; i < numUnfilteredNuclei; i++) {
 			Spot dapiSpot = dapiIterator.next();
-			nuclei[i] = new Nucleus(dapiSpot);
+			nucleiUnfiltered[i] = new Nucleus(dapiSpot, dapiImageMPBlurImp, dapiCentreFrac, edgeFac);
 		}
+		ArrayList<Nucleus> nucleiAL = new ArrayList<Nucleus>();
+		
+		for (int i = 0; i < numUnfilteredNuclei; i++) {		
+			boolean nucCheck = true;
+			for (int j = 0; j < numUnfilteredNuclei; j++) {
+			double nucSepDist = Nucleus.spotSeperation(nucleiUnfiltered[i].getNucleusSpot(), nucleiUnfiltered[j].getNucleusSpot());
+				if (i !=j && nucSepDist <= dapiSpotRadius && nucleiUnfiltered[i].getMeanDapiIntensity() < nucleiUnfiltered[j].getMeanDapiIntensity()){
+					nucCheck = false;
+					nucleiUnfiltered[i].setNucleusSpotType(4.0d);
+				}
+				
+			}
+			if (nucCheck) {
+				nucleiAL.add(nucleiUnfiltered[i]);
+			}
+		}
+		
+		
+		Nucleus[] nuclei = nucleiAL.toArray(new Nucleus[nucleiAL.size()]);
+		int numNuclei = nuclei.length;
+		
 		
 		Iterator<Spot> centIterator = centSpots.iterator(true);
 		Spot cent;	
@@ -242,9 +277,26 @@ public class SatelliteAnalysis<T extends RealType<T>> implements Command {
 				}
 			}
 		}
+		ResultsTable rt = ResultsTable.getResultsTable();
+	
+		for (int i = 0; i < numNuclei; i++) {
+			if (!nuclei[i].getIsEdge()) {
+				nuclei[i].computeProperties();
+				rt.incrementCounter();
+				rt.addValue("Series name", seriesName);
+				rt.addValue("Mean DAPI intensity", nuclei[i].getMeanDapiIntensity());
+				rt.addValue("Number of satellites", nuclei[i].getNumSatellites());
+				rt.addValue("Number of centrosomes", nuclei[i].getNumCentrosomes());
+				rt.addValue("Mean satellite intensity", nuclei[i].getMeanSatelliteIntensity());
+				rt.addValue("Mean centrosome intensity", nuclei[i].getMeanCentrosomeIntensity());
+				rt.addValue("Mean NN distance satellite-satellite", nuclei[i].getMeanNNDistSatSat());
+				rt.addValue("Mean NN distance satellite-centrosome", nuclei[i].getMeanNNDistSatCent());
+			}
+		}
+		rt.show("Results");
 		
-		nuclei[2].display(centImageBlurImp);
-		
+		displayAll(dapiImageMPBlurImp, nucleiUnfiltered, centSpots, satSpots);
+
 	}
 
 	/**
@@ -278,6 +330,8 @@ public class SatelliteAnalysis<T extends RealType<T>> implements Command {
 		cali.pixelDepth = meta.getPixelsPhysicalSizeZ(0).value(UNITS.MICROMETER).doubleValue();
 		cali.setUnit("micron");
 		imp.setGlobalCalibration(cali);
+	
+		imp.setTitle(meta.getImageName(0));
 		imp.show();
 		r.close();
 		// invoke the plugin
@@ -322,5 +376,39 @@ public class SatelliteAnalysis<T extends RealType<T>> implements Command {
 	    return model.getSpots();
 	}
 	
-	
+	private void displayAll(ImagePlus imp, Nucleus[] nuclei, SpotCollection centrosomes, SpotCollection satellites){
+		
+		SpotCollection allSpots = new SpotCollection();
+		Spot spot;
+		
+		for (int i = 0; i < nuclei.length; i++){	
+			spot = nuclei[i].getNucleusSpot();
+			allSpots.add(spot, 0);
+		}
+		Iterator<Spot> satIterator = satellites.iterator(true);
+		while (satIterator.hasNext()) {
+			spot = satIterator.next();
+			spot.putFeature("TYPE", 1.0);
+			allSpots.add(spot, 0);
+		}
+		Iterator<Spot> centIterator = centrosomes.iterator(true);
+		while (centIterator.hasNext()) {
+			spot = centIterator.next();
+			spot.putFeature("TYPE", 2.0);
+			allSpots.add(spot, 0);
+		}
+		Iterator<Spot> allIterator = allSpots.iterator(true);
+		
+		while (allIterator.hasNext()) {
+			System.out.println(allIterator.next().getFeature("TYPE"));
+		}
+		Model modelAll = new Model();
+		modelAll.setSpots(allSpots, false);
+		SpotColorGenerator color = new SpotColorGenerator(modelAll);
+		color.setFeature("TYPE");
+		HyperStackDisplayer displayer =  new HyperStackDisplayer(modelAll, new SelectionModel(modelAll), imp);
+		displayer.setDisplaySettings("SPOT_COLORING", color);
+		displayer.render();
+		displayer.refresh();
+	}
 }
