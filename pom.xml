@@ -13,7 +13,7 @@
 	</parent>
 
 	<groupId>uk.ac.cam.cruk</groupId>
-	<version>0.1.0</version>
+	<version>0.1.0-SNAPSHOT</version>
 
 	<name>Satellite Analysis</name>
 	<url>http://www.cruk.cam.ac.uk/</url>
@@ -46,7 +46,15 @@
 		</developer>
 	</developers>
 
-
+	<contributors>
+		<contributor>
+			<name>Jeremy Pike</name>
+			<url>http://www.cruk.cam.ac.uk</url>
+			<roles><role>founder</role></roles>
+			<properties><id>japike</id></properties>
+		</contributor>
+	</contributors>
+	
 	<mailingLists>
 		<mailingList>
 			<name>ImageJ Forum</name>
@@ -92,16 +100,11 @@
 			<artifactId>imagej-legacy</artifactId>
 		</dependency>
 	<dependency>
-  		<groupId>sc.fiji</groupId>
-  		<artifactId>TrackMate_</artifactId>
-  		<version>3.4.2</version>
+	  <groupId>sc.fiji</groupId>
+	  <artifactId>TrackMate_</artifactId>
+	  <version>3.4.2</version>
 	</dependency>
-	<dependency>
-  		<groupId>ome</groupId>
-  		<artifactId>bioformats_package</artifactId>
-  		<version>5.3.5-SNAPSHOT</version>
-	</dependency>
-	
+
 	</dependencies>
 	<artifactId>SatelliteAnalysis</artifactId>
 	<description>Command implementing counting of nuclei, centrosomes and satellite proteins</description>

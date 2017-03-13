@@ -1,5 +1,6 @@
 package uk.ac.cruk;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 
 import fiji.plugin.trackmate.Model;
@@ -16,6 +17,7 @@ import net.imagej.ops.OpService;
 public class Nucleus {
 	
 	private SpotCollection satellites;
+	private SpotCollection satellitesFilt;
 	private SpotCollection centrosomes;
 	private Spot nucleusSpot;
 	private double meanDapiIntensity;
@@ -26,6 +28,7 @@ public class Nucleus {
 	private double meanNNDistSatCent;
 	private double meanNNDistSatSat;
 	private boolean isEdge;
+	private boolean isMitotic;
 
 	public Nucleus(Spot nucleusSpot, ImagePlus imp, double dapiCentreFrac, double edgeFac) {
 
@@ -54,6 +57,9 @@ public class Nucleus {
 	public SpotCollection getSatellites() {
 		return satellites;
 	}
+	public SpotCollection getSatellitesFilt() {
+		return satellitesFilt;
+	}
 	
 	public void setSatellites(SpotCollection satellites) {
 		this.satellites = satellites;
@@ -70,6 +76,11 @@ public class Nucleus {
 	public boolean getIsEdge() {
 		return isEdge;
 	}
+	
+	public boolean getIsMitotic() {
+		return isMitotic;
+	}
+
 
 	public Spot getNucleusSpot() {
 		return nucleusSpot;
@@ -117,12 +128,31 @@ public class Nucleus {
 		nucleusSpot.putFeature("TYPE", type);
 	}
 	
-	public void computeProperties() {
+	public void computeProperties(double minCentSatDistance, double maxMeanDapiIntensity) {
 		
-		numSatellites = satellites.getNSpots(true);
+		Iterator<Spot> satIterator = satellites.iterator(true);
+		Spot satellite;
+		Spot nearestCent;
+		Spot nearestSat;
+		double distSatCent;
+		satellitesFilt = new SpotCollection();
+		while (satIterator.hasNext()) {
+			satellite = satIterator.next();
+			if (centrosomes.getNSpots(true) != 0) {
+				nearestCent = centrosomes.getClosestSpot(satellite, 0, true);
+				distSatCent = spotSeperation(satellite, nearestCent, false);
+				if (distSatCent >= minCentSatDistance) {
+					satellitesFilt.add(satellite, 0);
+				}
+			}
+		}
+
+
+		
+		numSatellites = satellitesFilt.getNSpots(true);
 		numCentrosomes = centrosomes.getNSpots(true);
 		
-		double[] satelliteIntensities = satellites.collectValues("MEAN_INTENSITY", true);
+		double[] satelliteIntensities = satellitesFilt.collectValues("MEAN_INTENSITY", true);
 		meanSatelliteIntensity = 0;
 		for (double satInt : satelliteIntensities) {
 			meanSatelliteIntensity += satInt;
@@ -136,26 +166,33 @@ public class Nucleus {
 		}
 		meanCentrosomeIntensity = meanCentrosomeIntensity  / centrosomeIntensities.length;
 		
-		Iterator<Spot> satIterator = satellites.iterator(true);
-		Spot satellite;
-		Spot nearestSat;
-		Spot nearestCent;
+		satIterator = satellitesFilt.iterator(true);
+		
+	
+		
 		meanNNDistSatCent = 0;
 		meanNNDistSatSat = 0;
 		while (satIterator.hasNext()) {
 			satellite = satIterator.next();
-			if (satellites.getNSpots(true) > 1) {
-				nearestSat = satellites.getNClosestSpots(satellite, 0, 2, true).get(1);
-				meanNNDistSatSat += spotSeperation(satellite, nearestSat);
+			if (satellitesFilt.getNSpots(true) > 1) {
+				nearestSat = satellitesFilt.getNClosestSpots(satellite, 0, 2, true).get(1);
+				meanNNDistSatSat += spotSeperation(satellite, nearestSat, false);
 			}
 			if (centrosomes.getNSpots(true) != 0) {
 				nearestCent = centrosomes.getClosestSpot(satellite, 0, true);
-				meanNNDistSatCent += spotSeperation(satellite, nearestCent);
+				meanNNDistSatCent += spotSeperation(satellite, nearestCent, false);
 			}
 			
 		}
-		meanNNDistSatCent = meanNNDistSatCent / satellites.getNSpots(true);
-		meanNNDistSatSat = meanNNDistSatSat / satellites.getNSpots(true);
+		meanNNDistSatCent = meanNNDistSatCent / satellitesFilt.getNSpots(true);
+		meanNNDistSatSat = meanNNDistSatSat / satellitesFilt.getNSpots(true);
+		
+		if (meanDapiIntensity > maxMeanDapiIntensity) {
+			isMitotic = true;
+		} else {
+			isMitotic = false;
+		}
+		
 	}
 	
 	public void display(ImagePlus imp) {
@@ -179,7 +216,12 @@ public class Nucleus {
 		displayer.render();
 		displayer.refresh();
 	}
-	public static double spotSeperation(Spot spot1, Spot spot2) {
-		return Math.sqrt(Math.pow(spot1.getFeature("POSITION_X") - spot2.getFeature("POSITION_X"), 2) + Math.pow(spot1.getFeature("POSITION_Y") - spot2.getFeature("POSITION_Y"), 2) + Math.pow(spot1.getFeature("POSITION_Z") - spot2.getFeature("POSITION_Z"), 2));
+	public static double spotSeperation(Spot spot1, Spot spot2, boolean twoD) {
+		if (twoD) {
+			return Math.sqrt(Math.pow(spot1.getFeature("POSITION_X") - spot2.getFeature("POSITION_X"), 2) + Math.pow(spot1.getFeature("POSITION_Y") - spot2.getFeature("POSITION_Y"), 2));
+		} else {
+			return Math.sqrt(Math.pow(spot1.getFeature("POSITION_X") - spot2.getFeature("POSITION_X"), 2) + Math.pow(spot1.getFeature("POSITION_Y") - spot2.getFeature("POSITION_Y"), 2) + Math.pow(spot1.getFeature("POSITION_Z") - spot2.getFeature("POSITION_Z"), 2));
+		}
+		
 	}
 }
