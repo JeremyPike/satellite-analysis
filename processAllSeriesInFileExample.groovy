@@ -1,6 +1,6 @@
 
 // @ImageJ ij
-
+// @File(label="Select a file") file
 import java.util.HashMap;
 import java.util.concurrent.Future;
 import uk.ac.cruk.SatelliteAnalysis;
@@ -9,6 +9,7 @@ import ij.IJ;
 import ij.ImageStack;
 import ij.process.ImageProcessor;
 import ij.measure.Calibration;
+import ij.measure.ResultsTable;
 import ij.plugin.HyperStackConverter;
 import loci.formats.ChannelSeparator;
 import loci.formats.meta.MetadataRetrieve;
@@ -16,6 +17,8 @@ import loci.formats.services.OMEXMLServiceImpl;
 import loci.plugins.util.ImageProcessorReader;
 import loci.plugins.util.LociPrefs;
 import ome.units.UNITS;
+import org.scijava.command.CommandModule;
+
 
 Map<String, Object> pluginSettings = new HashMap<String, Object>();
  
@@ -35,16 +38,19 @@ pluginSettings.put("filterSatellites", true);
 pluginSettings.put("displayMPOverlay", false);
 
 
-String id = "C:\\Users\\pike01\\Documents\\Side_Projects\\Data\\Valentina_Quarantotti\\PCM1\\RPE1_siRNA exp12-09-2016_PCM1-488_gTub-555_28-09-2016\\RPE1_siRNA exp12-09-2016_PCM1-488_gTub-555_28-09-2016.lif";
-
 ImageProcessorReader r = new ImageProcessorReader(new ChannelSeparator(LociPrefs.makeImageReader()));
 OMEXMLServiceImpl OMEXMLService = new OMEXMLServiceImpl();
 r.setMetadataStore(OMEXMLService.createOMEXMLMetadata());
-r.setId(id);
+r.setId(file.getPath());
 MetadataRetrieve meta = (MetadataRetrieve) r.getMetadataStore();
 
-for (int i = 0; i < 30; i = i + 10) {
-	println(i);
+ResultsTable rt = ResultsTable.getResultsTable();
+rt.reset();
+
+int numSeries = meta.getImageCount();
+
+for (int i = 0; i < numSeries; i = i + 1) {
+	println("Processing series " + (i + 1) + " of " + numSeries);
 	r.setSeries(i);
 	ImageStack stack = new ImageStack(r.getSizeX(), r.getSizeY());
 	for (int n = 0; n < r.getImageCount(); n++) {
@@ -63,7 +69,7 @@ for (int i = 0; i < 30; i = i + 10) {
 	
 	imp.setTitle(meta.getImageName(i));
 	pluginSettings.put("currentData", imp);
-	fc = ij.command().run(SatelliteAnalysis.class, true, pluginSettings);
+	Future<CommandModule> fc = ij.command().run(SatelliteAnalysis.class, true, pluginSettings);
 	while (!fc.isDone()){
 	}
 }
