@@ -50,6 +50,11 @@ import net.imglib2.type.numeric.real.FloatType;
  * This is a imageJ command for spatial analysis of nuclei, centrosomes and
  * satellites.
  * 
+ * The TrackMate Fiji plugin is used for spot detection: Tinevez, Jean-Yves, et
+ * al.
+ * "TrackMate: An open and extensible platform for single-particle tracking."
+ * Methods (2016).
+ * 
  * @author Jeremy Pike
  */
 
@@ -304,7 +309,7 @@ public class SatelliteAnalysis<T extends RealType<T>> implements Command {
 					// set check to false
 					nucCheck = false;
 					// change type for colour displays
-					nucleiUnfiltered[i].setNucleusSpotType(4.0d);
+					nucleiUnfiltered[i].setNucleusSpotType(5.0d);
 				}
 
 			}
@@ -561,7 +566,7 @@ public class SatelliteAnalysis<T extends RealType<T>> implements Command {
 		// Return spot collection
 		return model.getSpots();
 	}
-	
+
 	/**
 	 * displays all nuclear, centrosome and satellite detections contained in
 	 * the given array of Nucleus objects
