@@ -309,7 +309,7 @@ public class SatelliteAnalysis<T extends RealType<T>> implements Command {
 					// set check to false
 					nucCheck = false;
 					// change type for colour displays
-					nucleiUnfiltered[i].setNucleusSpotType(5.0d);
+					nucleiUnfiltered[i].setNucleusSpotType(1.0d);
 				}
 
 			}
@@ -576,10 +576,10 @@ public class SatelliteAnalysis<T extends RealType<T>> implements Command {
 	 *            one slice
 	 * 
 	 * @param nuclei
-	 *            array of nucelus objects containing the relevant detections
+	 *            array of nucleus objects containing the relevant detections
 	 * 
 	 * @param filtered
-	 *            if true will only show detections used in the analysis
+	 *            if true will only show filtered satellites
 	 * 
 	 */
 	private void displayAll(ImagePlus imp, Nucleus[] nuclei, boolean filtered) {
@@ -595,39 +595,34 @@ public class SatelliteAnalysis<T extends RealType<T>> implements Command {
 		// loop through all Nucleus objects
 		for (int i = 0; i < nuclei.length; i++) {
 
-			// if filtered not true or if Nucleus not on image edge and not
-			// mitotic
-			if (!filtered || !nuclei[i].getIsEdge() && !nuclei[i].getIsMitotic()) {
-				// got nuclear spot
-				spot = nuclei[i].getNucleusSpot();
+			// got nuclear spot
+			spot = nuclei[i].getNucleusSpot();
+			// set z position to zero as visualisation is 2D
+			spot.putFeature("POSITION_Z", 0.0d);
+			// add to joint collection
+			allSpots.add(spot, 0);
+			// either get the filtered satellites or the unfiltered
+			if (filtered) {
+				satellites = nuclei[i].getSatellitesFilt();
+			} else {
+				satellites = nuclei[i].getSatellites();
+			}
+			centrosomes = nuclei[i].getCentrosomes();
+			// add all centrosomes and satellites in given Nucleus to joint
+			// collection
+			satIterator = satellites.iterator(true);
+			while (satIterator.hasNext()) {
+				spot = satIterator.next();
 				// set z position to zero as visualisation is 2D
 				spot.putFeature("POSITION_Z", 0.0d);
-				// add to joint collection
 				allSpots.add(spot, 0);
-				// either get the filtered satellites or the unfiltered
-				if (filtered) {
-					satellites = nuclei[i].getSatellitesFilt();
-				} else {
-					satellites = nuclei[i].getSatellites();
-				}
-				centrosomes = nuclei[i].getCentrosomes();
-				// add all centrosomes and satellites in given Nucleus to joint
-				// collection
-				satIterator = satellites.iterator(true);
-				while (satIterator.hasNext()) {
-					spot = satIterator.next();
-					// set z position to zero as visualisation is 2D
-					spot.putFeature("POSITION_Z", 0.0d);
-					allSpots.add(spot, 0);
-				}
-				centIterator = centrosomes.iterator(true);
-				while (centIterator.hasNext()) {
-					spot = centIterator.next();
-					// set z position to zero as visualisation is 2D
-					spot.putFeature("POSITION_Z", 0.0d);
-					allSpots.add(spot, 0);
-				}
-
+			}
+			centIterator = centrosomes.iterator(true);
+			while (centIterator.hasNext()) {
+				spot = centIterator.next();
+				// set z position to zero as visualisation is 2D
+				spot.putFeature("POSITION_Z", 0.0d);
+				allSpots.add(spot, 0);
 			}
 
 		}
@@ -638,10 +633,11 @@ public class SatelliteAnalysis<T extends RealType<T>> implements Command {
 		// Create spot colour scheme based on "TYPE" property
 		SpotColorGenerator color = new SpotColorGenerator(modelAll);
 		color.setFeature("TYPE");
-
+		// TYPE can range from 0 to 5 for all spot types
+		color.setMinMax(0, 5);
 		// Display spots on provided ImagePlus using a Hyperstack displayer
 		HyperStackDisplayer displayer = new HyperStackDisplayer(modelAll, new SelectionModel(modelAll), imp);
-		displayer.setDisplaySettings("KEY_SPOT_COLORING", color);
+		displayer.setDisplaySettings(HyperStackDisplayer.KEY_SPOT_COLORING, color);
 		displayer.refresh();
 		displayer.render();
 	}

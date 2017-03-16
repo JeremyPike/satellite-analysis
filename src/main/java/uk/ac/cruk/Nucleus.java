@@ -120,7 +120,7 @@ public class Nucleus {
 				|| posY + edgeFrac * radius >= imp.getHeight() * imp.getCalibration().pixelHeight) {
 			isEdge = true;
 			// set TYPE property, used for spot colouring
-			nucleusSpot.putFeature("TYPE", 3.0d);
+			nucleusSpot.putFeature("TYPE", 2.0d);
 		} else {
 			isEdge = false;
 			nucleusSpot.putFeature("TYPE", 0.0d);
@@ -205,7 +205,7 @@ public class Nucleus {
 	 */
 	public void addSatellite(Spot satellite) {
 		// set TYPE for spot colouring
-		satellite.putFeature("TYPE", 1.0d);
+		satellite.putFeature("TYPE", 3.0d);
 		satellites.add(satellite, 0);
 	}
 
@@ -217,7 +217,7 @@ public class Nucleus {
 	 */
 	public void addCentrosome(Spot centrosome) {
 		// set TYPE for spot colouring
-		centrosome.putFeature("TYPE", 2.0d);
+		centrosome.putFeature("TYPE", 5.0d);
 		centrosomes.add(centrosome, 0);
 	}
 
@@ -375,7 +375,7 @@ public class Nucleus {
 		color.setFeature("TYPE");
 		// create and show display
 		HyperStackDisplayer displayer = new HyperStackDisplayer(model, new SelectionModel(model), imp);
-		displayer.setDisplaySettings("SPOT_COLORING", color);
+		displayer.setDisplaySettings(HyperStackDisplayer.KEY_SPOT_COLORING, color);
 		displayer.render();
 		displayer.refresh();
 	}
