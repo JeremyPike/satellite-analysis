@@ -9,7 +9,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Future;
 
-import org.python.antlr.PythonParser.printlist2_return;
 import org.scijava.command.Command;
 import org.scijava.command.CommandModule;
 import org.scijava.module.ModuleItem;
@@ -346,7 +345,7 @@ public class SatelliteAnalysis<T extends RealType<T>> implements Command {
 			// add centrosome to correct Nucleus
 			nuclei[minInd].addCentrosome(cent);
 		}
-	
+
 		// assign each detected satellite to a filtered Nucelus based on closest
 		// distance
 		Iterator<Spot> satIterator = satSpots.iterator(true);
@@ -630,8 +629,7 @@ public class SatelliteAnalysis<T extends RealType<T>> implements Command {
 			}
 
 		}
-		
-	
+
 		// Add joint spot collection to an empty Trackmate model
 		Model modelAll = new Model();
 		modelAll.setSpots(allSpots, false);

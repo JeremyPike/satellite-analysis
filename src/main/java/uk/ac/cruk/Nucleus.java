@@ -1,6 +1,7 @@
 package uk.ac.cruk;
 
 import java.util.Iterator;
+
 import fiji.plugin.trackmate.Model;
 import fiji.plugin.trackmate.SelectionModel;
 import fiji.plugin.trackmate.Spot;
@@ -98,7 +99,7 @@ public class Nucleus {
 	 *            is on the image edge
 	 */
 	public Nucleus(Spot nucleusSpot, ImagePlus imp, double dapiCentreFrac, double edgeFrac) {
-		
+
 		// set the spot name to empty String
 		nucleusSpot.setName(" ");
 
@@ -237,7 +238,7 @@ public class Nucleus {
 	public void setNucleusSpotType(double type) {
 		nucleusSpot.putFeature("TYPE", type);
 	}
-	
+
 	/**
 	 * Sets the name for the nucleus spot
 	 * 
@@ -247,7 +248,6 @@ public class Nucleus {
 	public void setNucleusSpotName(String name) {
 		nucleusSpot.setName(name);
 	}
-	
 
 	/**
 	 * Computes statistics for Fields not set by constructor. This method should
@@ -304,6 +304,7 @@ public class Nucleus {
 		for (double satInt : satelliteIntensities) {
 			meanSatelliteIntensity += satInt;
 		}
+		meanSatelliteIntensity = meanSatelliteIntensity / satelliteIntensities.length;
 
 		// find the mean mean intensity across all centrosomes
 		double[] centrosomeIntensities = centrosomes.collectValues("MEAN_INTENSITY", true);
