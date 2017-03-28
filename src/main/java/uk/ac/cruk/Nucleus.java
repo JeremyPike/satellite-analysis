@@ -98,6 +98,9 @@ public class Nucleus {
 	 *            is on the image edge
 	 */
 	public Nucleus(Spot nucleusSpot, ImagePlus imp, double dapiCentreFrac, double edgeFrac) {
+		
+		// set the spot name to empty String
+		nucleusSpot.setName(" ");
 
 		// get nucleus radius (should be in microns)
 		double radius = nucleusSpot.getFeature("RADIUS");
@@ -120,10 +123,10 @@ public class Nucleus {
 				|| posY + edgeFrac * radius >= imp.getHeight() * imp.getCalibration().pixelHeight) {
 			isEdge = true;
 			// set TYPE property, used for spot colouring
-			nucleusSpot.putFeature("TYPE", 2.0d);
+			nucleusSpot.putFeature("TYPE", 0.0d);
 		} else {
 			isEdge = false;
-			nucleusSpot.putFeature("TYPE", 0.0d);
+			nucleusSpot.putFeature("TYPE", 2.0d);
 		}
 
 		// create empty SpotCollection objects for satellites and centrosomes
@@ -206,6 +209,8 @@ public class Nucleus {
 	public void addSatellite(Spot satellite) {
 		// set TYPE for spot colouring
 		satellite.putFeature("TYPE", 3.0d);
+		// set the spot name to empty String
+		satellite.setName(" ");
 		satellites.add(satellite, 0);
 	}
 
@@ -218,6 +223,8 @@ public class Nucleus {
 	public void addCentrosome(Spot centrosome) {
 		// set TYPE for spot colouring
 		centrosome.putFeature("TYPE", 5.0d);
+		// set the spot name to empty String
+		centrosome.setName(" ");
 		centrosomes.add(centrosome, 0);
 	}
 
@@ -230,6 +237,17 @@ public class Nucleus {
 	public void setNucleusSpotType(double type) {
 		nucleusSpot.putFeature("TYPE", type);
 	}
+	
+	/**
+	 * Sets the name for the nucleus spot
+	 * 
+	 * @param name
+	 *            name of spot
+	 */
+	public void setNucleusSpotName(String name) {
+		nucleusSpot.setName(name);
+	}
+	
 
 	/**
 	 * Computes statistics for Fields not set by constructor. This method should

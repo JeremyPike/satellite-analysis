@@ -13,7 +13,7 @@
 	</parent>
 
 	<groupId>uk.ac.cam.cruk</groupId>
-	<version>0.1.1</version>
+	<version>1.0.0</version>
 
 	<name>Satellite Analysis</name>
 	<url>http://www.cruk.cam.ac.uk/</url>

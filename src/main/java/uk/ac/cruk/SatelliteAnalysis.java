@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Future;
 
+import org.python.antlr.PythonParser.printlist2_return;
 import org.scijava.command.Command;
 import org.scijava.command.CommandModule;
 import org.scijava.module.ModuleItem;
@@ -345,6 +346,7 @@ public class SatelliteAnalysis<T extends RealType<T>> implements Command {
 			// add centrosome to correct Nucleus
 			nuclei[minInd].addCentrosome(cent);
 		}
+	
 		// assign each detected satellite to a filtered Nucelus based on closest
 		// distance
 		Iterator<Spot> satIterator = satSpots.iterator(true);
@@ -382,6 +384,8 @@ public class SatelliteAnalysis<T extends RealType<T>> implements Command {
 			// add its properties to the ResultTable
 			if (!nuclei[i].getIsEdge() && !nuclei[i].getIsMitotic()) {
 				rt.incrementCounter();
+				// set spot name for nucleus based on current results table row
+				nuclei[i].setNucleusSpotName(Integer.toString(rt.getCounter()));
 				// include series name
 				rt.addValue("Series name", seriesName);
 				rt.addValue("Mean DAPI intensity", nuclei[i].getMeanDapiIntensity());
@@ -626,6 +630,8 @@ public class SatelliteAnalysis<T extends RealType<T>> implements Command {
 			}
 
 		}
+		
+	
 		// Add joint spot collection to an empty Trackmate model
 		Model modelAll = new Model();
 		modelAll.setSpots(allSpots, false);
@@ -638,6 +644,8 @@ public class SatelliteAnalysis<T extends RealType<T>> implements Command {
 		// Display spots on provided ImagePlus using a Hyperstack displayer
 		HyperStackDisplayer displayer = new HyperStackDisplayer(modelAll, new SelectionModel(modelAll), imp);
 		displayer.setDisplaySettings(HyperStackDisplayer.KEY_SPOT_COLORING, color);
+		// display spot names which correspond to the results table row
+		displayer.setDisplaySettings(HyperStackDisplayer.KEY_DISPLAY_SPOT_NAMES, true);
 		displayer.refresh();
 		displayer.render();
 	}
